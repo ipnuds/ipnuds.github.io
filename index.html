@@ -1,1 +1,134 @@
-Welcome
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<script src="lib/d3.js"></script>
+		<script src="lib/dimple.v2.1.2.js"></script>
+		
+		<style>
+		 h2 {
+	        color: black;
+	        text-align: center;
+	      }
+
+	    .axis {
+	        font-family: arial;
+	        font-size: 0.6em;
+	      }
+
+      	path {
+	        fill: none;
+	        stroke: black;
+	        stroke-width: 2px;
+	      }
+
+    	.tick {
+	        fill: none;
+	        stroke: black;
+   		}
+
+    	circle {
+	        opacity: 0.4;
+	        stroke: none;
+     	 }
+      
+	     .line_plot {
+	        fill: none;
+	        stroke: #4eb0bb;
+	        stroke-width: 1px;
+	     }
+		</style>
+		
+		<script type="text/javascript">
+			function draw(data) {
+
+				"use strict";
+				var margin = 55,
+					width = 1400 -margin,
+					height = 800 - margin;
+
+				var radius = 3;
+				var color = "blue";	
+
+				d3.select("body")
+            		.append("h2")
+          		  	.text("Padi")
+
+				var svg = d3.select("body")
+					.append("svg")
+						.attr("width", width + margin)
+						.attr("height", height + margin)
+					.append('g')
+						.attr('class','chart');
+
+				d3.select("svg")
+					.selectAll("circle")
+					.data(data)
+					.enter()
+					.append("circle");
+
+				var time_extent = d3.extent(data, function(d){
+					return d['tahun'];
+				});
+
+				var count_extent = d3.extent(data, function(d){
+					return d['produksi']
+				});
+
+				var time_scale = d3.time.scale()
+					.range([margin, width])
+					.domain(time_extent);
+
+				var count_scale = d3.scale.linear()
+					.range([height, margin])
+					.domain(count_extent);
+
+				var time_axis = d3.svg.axis()
+					.scale(time_scale)
+					.ticks(d3.time.years, 1);	
+
+				var count_axis = d3.svg.axis()
+					.scale(count_scale)
+					.orient("left");
+
+				 d3.select("svg")
+		            .append("g")
+		            .attr("class", "x axis")
+		            .attr("transform", "translate(0," + height + ")")
+		            .call(time_axis);	
+
+				d3.select("svg")
+					.append("g")
+					.attr("class", "y axis")
+					.attr("transform", "translate(" + margin + ",0)")
+					.call(count_axis);
+
+				d3.selectAll("circle")
+					.attr("cx", function(d) {
+						return time_scale(d["tahun"]);
+					})	
+					.attr("cy", function(d) {
+						return count_scale(d["produksi"]);
+					})
+					.attr("r", radius)
+					.attr("fill", color);
+
+			};
+		</script>
+	</head>
+
+<body>
+	<script type="text/javascript">
+
+	format = d3.time.format("%Y");
+
+	d3.csv("padi.csv", function(d) {
+      // transform data
+      d['tahun'] = format.parse(d['tahun']);
+      d['produksi'] = +d['produksi'];
+      return d;
+
+  	},draw);
+	</script>	
+</body>
+</html>
