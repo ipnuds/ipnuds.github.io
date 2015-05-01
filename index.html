@@ -44,11 +44,12 @@
 
 				"use strict";
 				var margin = 55,
-					width = 1400 -margin,
-					height = 800 - margin;
+					width = 1000 -margin,
+					height = 600 - margin;
 
-				var radius = 3;
-				var color = "blue";	
+				var radius =5;
+
+				var color = d3.scale.category10();	
 
 				d3.select("body")
             		.append("h2")
@@ -58,24 +59,23 @@
 					.append("svg")
 						.attr("width", width + margin)
 						.attr("height", height + margin)
-					.append('g')
-						.attr('class','chart');
 
-				d3.select("svg")
-					.selectAll("circle")
-					.data(data)
-					.enter()
-					.append("circle");
+				var nest = d3.nest()
+				    .key(function(d) { return d.tahun; })
+				    .entries(data);
 
+				var g = svg.append('g')
+								.attr('class', 'scatter');
+				
 				var time_extent = d3.extent(data, function(d){
-					return d['tahun'];
+					return d['luas_panen'];
 				});
 
 				var count_extent = d3.extent(data, function(d){
 					return d['produksi']
 				});
 
-				var time_scale = d3.time.scale()
+				var time_scale = d3.scale.linear()
 					.range([margin, width])
 					.domain(time_extent);
 
@@ -83,14 +83,17 @@
 					.range([height, margin])
 					.domain(count_extent);
 
+				var radius_scale = d3. scale.linear()
+					.range([10,50])
+					.domain(count_extent);
+
 				var time_axis = d3.svg.axis()
-					.scale(time_scale)
-					.ticks(d3.time.years, 1);	
+					.scale(time_scale)	
 
 				var count_axis = d3.svg.axis()
 					.scale(count_scale)
 					.orient("left");
-
+					
 				 d3.select("svg")
 		            .append("g")
 		            .attr("class", "x axis")
@@ -103,16 +106,55 @@
 					.attr("transform", "translate(" + margin + ",0)")
 					.call(count_axis);
 
-				d3.selectAll("circle")
-					.attr("cx", function(d) {
-						return time_scale(d["tahun"]);
-					})	
-					.attr("cy", function(d) {
-						return count_scale(d["produksi"]);
-					})
-					.attr("r", radius)
-					.attr("fill", color);
+				
+				
 
+				function update(year){
+
+					var b = g.selectAll('circle').data([]);
+
+					b.exit().remove();
+
+					var bubbles = g.selectAll('circle').data(nest[year-1993].values);
+
+					bubbles.exit().remove();
+
+					bubbles.enter()
+							.append('circle')
+								.attr('class', function(d){return d['kode_provinsi'];})
+								.attr('cx', function(d) {					    	
+						    		return time_scale(+d["luas_panen"]);
+						  		  })
+								.attr('cy',function(d) {
+						    		return count_scale(+d["produksi"]);
+						  		  })
+								.attr('r', function(d){
+									return radius_scale(+d['produksi']);
+								  })								
+								.style("fill", function(d) { return color(d['kode_provinsi']); });
+
+					console.log(nest[year-1993]);
+				}
+					
+
+				 var years = [];
+
+		          for(var i = 1993; i <= 2013; i ++) {
+		            years.push(i);           
+		          }
+
+		          var year_idx = 0;
+
+		          var year_interval = setInterval(function() {
+		            update(years[year_idx]);
+		            console.log(years[year_idx]);
+		            year_idx++;
+
+		            if(year_idx >= years.length) {
+		                clearInterval(year_interval);
+		            }
+		          }, 1000);
+      
 			};
 		</script>
 	</head>
@@ -120,15 +162,40 @@
 <body>
 	<script type="text/javascript">
 
-	format = d3.time.format("%Y");
 
 	d3.csv("padi.csv", function(d) {
       // transform data
-      d['tahun'] = format.parse(d['tahun']);
+      d['tahun'] = +d['tahun'];
       d['produksi'] = +d['produksi'];
+      d['luas_panen'] = +d['luas_panen'];
       return d;
 
   	},draw);
 	</script>	
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
