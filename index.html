@@ -3,8 +3,8 @@
 	<head>
 		<meta charset="utf-8">
 		<script src="lib/d3.v3.min.js"></script>
-		<script src="lib/dimple.v2.1.2.js"></script>
-		
+		<script src="lib/dimple.v2.1.2.js"></script>		
+
 		<style>
 		 h2 {
 	        color: black;
@@ -28,7 +28,7 @@
    		}
 
     	circle {
-	        opacity: 0.4;
+	        opacity: 0.8;
 	        stroke: none;
      	 }
       
@@ -37,9 +37,102 @@
 	        stroke: #4eb0bb;
 	        stroke-width: 1px;
 	     }
+	     div.tooltip	{
+	     	position: absolute;
+	     	text-align: center;
+	     	width: 160px;
+	     	height: 88px;
+	     	padding: 2px;
+	     	font: 16px sans-serif;
+	     	background: lightsteelblue;
+	     	border: 0px;
+	     	border-radius: 8px;
+	     	pointer-events: none;
+
+	     }
+	    .year.label	{
+	    	font: 500 196px sans-serif;
+	    	fill: #ddd;
+	    }
+
+	    input[type=range]	{
+	    	-webkit-appearance: none;
+	    }
+
+	    input[type=range]::-webkit-slider-runnable-track	{
+	    	width: 945;
+	    	height: 5px;
+	    	background: #ddd;
+	    	border: none;
+	    	border-radius: 3px;
+	    }
+
+	    input[type=range]::-webkit-slider-thumb	{
+	    	border: none;
+	    	height: 16px;
+	    	width: :16px;
+	    	border-radius: 50%
+	    	background: goldenrod;
+	    	margin-top: -4px;
+	    }
+
+	    input[type=range]:focus::-webkit-slider-runnable-track {
+  			background: #ccc;
+		}
+
+	    input[type=range]::focus	{
+	    	outline: none;
+	    }
+
+	    input[type=range]{
+    /* fix for FF unable to apply focus style bug  */
+		    border: 1px solid white; 
+
+		    /*required for proper track sizing in FF*/
+		    width: 890px;
+		    margin-left: 55px;
+		}
+
+		input[type=range]::-moz-range-track {
+		    width: 890px;
+		    height: 5px;
+		    background: #ddd;
+		    border: none;
+		    border-radius: 3px;
+		}
+
+		input[type=range]::-moz-range-thumb {
+		    border: none;
+		    height: 16px;
+		    width: 16px;
+		    border-radius: 50%;
+		    background: goldenrod;
+		}
+
+		/*hide the outline behind the border*/
+		input[type=range]:-moz-focusring{
+		    outline: 1px solid white;
+		    outline-offset: -1px;
+		}
+
+		input[type=range]:focus::-moz-range-track {
+		    background: #ccc;
+		}
+
+		.grid .tick {
+		    stroke: lightgrey;
+		    opacity: 0.7;
+		}
+
+		.grid path {
+		      stroke-width: 0;
+		}
+
 		</style>
 		
-		<script type="text/javascript">
+		<script type="text/javascript">			
+							
+			
 			function draw(data) {
 
 				"use strict";
@@ -49,7 +142,7 @@
 
 				var radius =5;
 
-				var color = d3.scale.category10();	
+				var color = d3.scale.category20();	
 
 				d3.select("body")
             		.append("h2")
@@ -106,10 +199,51 @@
 					.attr("transform", "translate(" + margin + ",0)")
 					.call(count_axis);
 
+				var text = svg.append("text")
+									.attr('class',"year label")
+									.attr('text-anchor',"end")
+									.attr('y', height-24)
+									.attr('x',	width );
+
+				function make_x_axis() {        
+				    return d3.svg.axis()
+				        .scale(time_scale)
+				         .orient("bottom")
+				         .ticks(5)
+				}
+
+				function make_y_axis() {        
+				    return d3.svg.axis()
+				        .scale(count_scale)
+				        .orient("left")
+				        .ticks(5)
+				}	
 				
-				
+				svg.append("g")         
+			        .attr("class", "grid")
+			        .attr("transform", "translate(0," + height + ")")
+			        .call(make_x_axis()
+			            .tickSize(-height+margin, 0, 0)
+			            .tickFormat("")
+			        )
+
+			    svg.append("g")         
+			        .attr("class", "grid")
+			        .attr('transform',"translate("+margin+",0)")
+			        .call(make_y_axis()
+			            .tickSize(-width+margin, 0, 0)
+			            .tickFormat("")
+			        )				
 
 				function update(year){
+					var div	= d3.select("body").append("div")
+							.attr('class',"tooltip")
+							.style('opacity', 0);
+
+					
+								
+					text
+						.text(year);
 
 					var b = g.selectAll('circle').data([]);
 
@@ -129,40 +263,71 @@
 						    		return count_scale(+d["produksi"]);
 						  		  })
 								.attr('r', function(d){
-									return radius_scale(+d['produksi']);
+									var rad = +d['produktivitas']*0.75;
+									return rad;
 								  })								
-								.style("fill", function(d) { return color(d['kode_provinsi']); });
+								.style("fill", function(d) { return color(d['kode_provinsi']); })
+								.on("mouseover", function(d,i){
+									div.transition()
+										.duration(200)
+										.style('opacity', .8);
+									div.html(d['nama_provinsi']+"</br>"+
+												"luas panen: " +d['luas_panen']+"</br>"+
+												"produksi: "+d['produksi'])
+									.style("left", (d3.event.pageX) + "px")		
+                					.style("top", (d3.event.pageY - 28) + "px");
+								})
+								.on("mouseout", function(d) {		
+						            div.transition()		
+						                .duration(500)		
+						                .style("opacity", 0);	
+						        });
 
-					console.log(nest[year-1993]);
+					//console.log(nest[year-1993]);
 				}
 					
+				update(1993);
+				var years = [];
 
-				 var years = [];
-
-		          for(var i = 1993; i <= 2013; i ++) {
+		        for(var i = 1993; i <= 2013; i ++) {
 		            years.push(i);           
-		          }
+		        }
 
-		          var year_idx = 0;
+		        var year_idx = 0;
 
-		          var year_interval = setInterval(function() {
-		            update(years[year_idx]);
-		            console.log(years[year_idx]);
+		        var year_interval = setInterval(function() {
+		          // update(years[year_idx]);
+		           // console.log(years[year_idx]);
 		            year_idx++;
 
 		            if(year_idx >= years.length) {
 		                clearInterval(year_interval);
 		            }
-		          }, 1000);
-      
+		        }, 1000);
+
+		        d3.select('body')
+		        	.append('input')
+		        		.attr('type','range')
+		        		.attr('min',1993)
+		        		.attr('max',2013)
+		        		.attr('value',1993)
+		        		.attr('step', 1)
+		        		.on('change', function(d,i){
+		        			update(+this.value);
+		        		});
+
+		      
+      			
 			};
-		</script>
+		</script>		
+
+	
 	</head>
 
 <body>
+	<!-- <input type="range" min="1993" max="2013" value="1993" step="1" onchange="showValue(this.value)" id="year-input"/> -->
+	
 	<script type="text/javascript">
-
-
 	d3.csv("padi.csv", function(d) {
       // transform data
       d['tahun'] = +d['tahun'];
@@ -170,7 +335,7 @@
       d['luas_panen'] = +d['luas_panen'];
       return d;
 
-  	},draw);
+  	},draw);  	
 	</script>	
 </body>
 </html>
