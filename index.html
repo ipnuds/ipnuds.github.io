@@ -39,9 +39,9 @@
 	     }
 	     div.tooltip	{
 	     	position: absolute;
-	     	text-align: center;
-	     	width: 160px;
-	     	height: 88px;
+	     	text-align: left;
+	     	width: 210px;
+	     	height: 130px;
 	     	padding: 2px;
 	     	font: 16px sans-serif;
 	     	background: lightsteelblue;
@@ -50,9 +50,14 @@
 	     	pointer-events: none;
 
 	     }
+	    
 	    .year.label	{
 	    	font: 500 196px sans-serif;
 	    	fill: #ddd;
+	    }
+
+	    h2	{
+	    	font: 500 32px sans-serif;
 	    }
 
 	    input[type=range]	{
@@ -89,8 +94,8 @@
 		    border: 1px solid white; 
 
 		    /*required for proper track sizing in FF*/
-		    width: 890px;
-		    margin-left: 55px;
+		    width: 832px;
+		    margin-left: 85px;
 		}
 
 		input[type=range]::-moz-range-track {
@@ -136,7 +141,7 @@
 			function draw(data) {
 
 				"use strict";
-				var margin = 55,
+				var margin = 85,
 					width = 1000 -margin,
 					height = 600 - margin;
 
@@ -146,7 +151,7 @@
 
 				d3.select("body")
             		.append("h2")
-          		  	.text("Padi")
+          		  	.text("Tanaman Padi per Provinsi")
 
 				var svg = d3.select("body")
 					.append("svg")
@@ -159,6 +164,23 @@
 
 				var g = svg.append('g')
 								.attr('class', 'scatter');
+
+				d3.select('svg')
+					.append("svg:text")
+						.attr('x', -height/2)
+						.attr('y', 14)
+						.attr('text-anchor',"middle")
+						.attr('transform',"rotate(-90)" )
+						.style('font-size', '16px')
+						.text("Produksi (Ton)");
+
+				d3.select('svg')
+					.append("svg:text")
+						.attr('x', width/2)
+						.attr('y', height+40)
+						.attr('text-anchor',"middle")
+						.style('font-size', '16px')
+						.text("Luas Panen (Hektar)");		
 				
 				var time_extent = d3.extent(data, function(d){
 					return d['luas_panen'];
@@ -240,8 +262,6 @@
 							.attr('class',"tooltip")
 							.style('opacity', 0);
 
-					
-								
 					text
 						.text(year);
 
@@ -249,7 +269,7 @@
 
 					b.exit().remove();
 
-					var bubbles = g.selectAll('circle').data(nest[year-1993].values);
+					var bubbles = g.selectAll('circle').data(nest[year-1993].values.sort(function(a,b) {return b['produktivitas'] - a['produktivitas']; }));
 
 					bubbles.exit().remove();
 
@@ -271,9 +291,10 @@
 									div.transition()
 										.duration(200)
 										.style('opacity', .8);
-									div.html(d['nama_provinsi']+"</br>"+
-												"luas panen: " +d['luas_panen']+"</br>"+
-												"produksi: "+d['produksi'])
+									div.html("  "+d['nama_provinsi']+"</br>"+"</br>"+
+												"  luas panen: " +d['luas_panen']+" Ha"+"</br>"+
+												"  produksi: "+d['produksi']+" Ton"+"</br>"+
+												"  produktivitas: "+d['produktivitas']+" Kw/Ha")
 									.style("left", (d3.event.pageX) + "px")		
                 					.style("top", (d3.event.pageY - 28) + "px");
 								})
